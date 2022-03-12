@@ -18,8 +18,8 @@
 #import "SQRLUpdate.h"
 #import "SQRLZipArchiver.h"
 #import "SQRLShipItRequest.h"
-#import <ReactiveCocoa/EXTScope.h>
-#import <ReactiveCocoa/ReactiveCocoa.h>
+#import <ReactiveObjC/EXTScope.h>
+#import <ReactiveObjC/ReactiveObjC.h>
 #import <sys/mount.h>
 
 NSString * const SQRLUpdaterErrorDomain = @"SQRLUpdaterErrorDomain";
@@ -428,7 +428,7 @@ static NSString * const SQRLUpdaterUniqueTemporaryDirectoryPrefix = @"update.";
 						cleanUp();
 						return [RACSignal empty];
 					}
-
+					
 					return [self verifyAndPrepareUpdate:update fromBundle:updateBundle];
 				}]
 				doError:^(id _) {
@@ -439,7 +439,7 @@ static NSString * const SQRLUpdaterUniqueTemporaryDirectoryPrefix = @"update.";
 }
 
 - (RACSignal *)unarchiveAndPrepareData:(NSData *)data withName:(NSString *)name intoDirectory:(NSURL *)downloadDirectory {
-	return [[[[[RACSignal
+	return [[[[RACSignal
 		defer:^{
 			NSURL *zipOutputURL = [downloadDirectory URLByAppendingPathComponent:name];
 			NSError *error = nil;
@@ -453,19 +453,22 @@ static NSString * const SQRLUpdaterUniqueTemporaryDirectoryPrefix = @"update.";
 			NSLog(@"Download completed to: %@", zipOutputURL);
 		}]
 		flattenMap:^(NSURL *zipOutputURL) {
-			return [[[[SQRLZipArchiver
-				unzipArchiveAtURL:zipOutputURL intoDirectoryAtURL:downloadDirectory]
-				ignoreValues]
-				concat:[RACSignal return:zipOutputURL]]
-				doCompleted:^{
-					NSError *error = nil;
-					if (![NSFileManager.defaultManager removeItemAtURL:zipOutputURL error:&error]) {
-						NSLog(@"Error removing downloaded archive at %@: %@", zipOutputURL, error.sqrl_verboseDescription);
-					}
+			return [[[[[SQRLZipArchiver
+						unzipArchiveAtURL:zipOutputURL intoDirectoryAtURL:downloadDirectory]
+				  ignoreValues]
+				  concat:[RACSignal return:zipOutputURL]]
+				  doCompleted:^{
+				  }]
+				  then:^ {
+					// NSLog(@"This is a hack. Wait 5 seconds unzip to finish");
+					return [[[RACSignal empty] delay:5.0f] then: ^ {
+						NSError *error = nil;
+						if (![NSFileManager.defaultManager removeItemAtURL:zipOutputURL error:&error]) {
+							NSLog(@"Error removing downloaded archive at %@: %@", zipOutputURL, error.sqrl_verboseDescription);
+						}
+						return [self updateBundleMatchingCurrentApplicationInDirectory:downloadDirectory];
+					}];
 				}];
-		}]
-		flattenMap:^(NSURL *zipOutputURL) {
-			return [self updateBundleMatchingCurrentApplicationInDirectory:downloadDirectory];
 		}]
 		setNameWithFormat:@"%@ -unarchiveAndPrepareData:withName: %@ intoDirectory: %@", self, name, downloadDirectory];
 }
@@ -560,6 +563,8 @@ static NSString * const SQRLUpdaterUniqueTemporaryDirectoryPrefix = @"update.";
 			}];
 			
 			NSURL *updateBundleURL = [enumerator.rac_sequence objectPassingTest:^(NSURL *URL) {
+				NSLog(@"Retrieving %@", URL);
+
 				NSString *type = nil;
 				NSError *error = nil;
 				if (![URL getResourceValue:&type forKey:NSURLTypeIdentifierKey error:&error]) {

@@ -5,12 +5,6 @@
       location = "group:Squirrel.xcodeproj">
    </FileRef>
    <FileRef
-      location = "group:Carthage/Checkouts/Mantle/Mantle.xcodeproj">
-   </FileRef>
-   <FileRef
-      location = "group:Carthage/Checkouts/ReactiveCocoa/ReactiveCocoa.xcodeproj">
-   </FileRef>
-   <FileRef
       location = "group:External/OHHTTPStubs/OHHTTPStubs/OHHTTPStubs.xcodeproj">
    </FileRef>
    <FileRef

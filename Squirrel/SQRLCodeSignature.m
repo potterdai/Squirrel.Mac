@@ -8,10 +8,10 @@
 
 #import "SQRLCodeSignature.h"
 
-#import "EXTKeyPathCoding.h"
-#import "EXTScope.h"
-#import <ReactiveCocoa/RACSignal+Operations.h>
-#import <ReactiveCocoa/RACSubscriber.h>
+#import <ReactiveObjC/EXTKeyPathCoding.h>
+#import <ReactiveObjC/EXTScope.h>
+#import <ReactiveObjC/RACSignal+Operations.h>
+#import <ReactiveObjC/RACSubscriber.h>
 #import <Security/Security.h>
 
 NSString * const SQRLCodeSignatureErrorDomain = @"SQRLCodeSignatureErrorDomain";
@@ -129,6 +129,7 @@ const NSInteger SQRLCodeSignatureErrorCouldNotCreateStaticCode = -2;
 			if (validityError != NULL) CFRelease(validityError);
 		};
 
+		// TODO: if globally turn off
 		if (result != noErr) {
 			NSMutableDictionary *userInfo = [@{
 				NSLocalizedDescriptionKey: [NSString stringWithFormat:NSLocalizedString(@"Code signature at URL %@ did not pass validation", nil), bundleURL],
